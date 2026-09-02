@@ -4,6 +4,13 @@ namespace MyWebApp.Handlers;
 
 public class GlobalExceptionHandler : IExceptionHandler
 {
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    {
+        _logger = logger;
+    }
+
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
@@ -13,7 +20,14 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
 
-             await httpContext.Response.WriteAsJsonAsync(new
+            _logger.LogWarning(
+                exception,
+                "Invalid http request recived: {Method} {Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path
+            );
+
+            await httpContext.Response.WriteAsJsonAsync(new
             {
                 status = 400,
                 message = "Invalid request"
@@ -21,6 +35,13 @@ public class GlobalExceptionHandler : IExceptionHandler
 
             return true;            
         }
+
+        _logger.LogError(
+            exception,
+            "Unhandled exception occurred: {Method} {Path}",
+            httpContext.Request.Method,
+            httpContext.Request.Path
+        );
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 

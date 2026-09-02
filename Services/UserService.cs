@@ -8,10 +8,12 @@ namespace MyWebApp.Services;
 public class UserService : IUserService
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(AppDbContext context)
+    public UserService(AppDbContext context, ILogger<UserService> logger)
     {
         _context = context;
+        _logger = logger;
     }
     
     public async Task<List<User>> GetAllAsync()
@@ -21,7 +23,17 @@ public class UserService : IUserService
 
     public async Task<User?> GetByIdAsync(int id)
     {
-        return await _context.Users.FindAsync(id);
+        User? user = await _context.Users.FindAsync(id);
+
+        if (user is null)
+        {
+            _logger.LogWarning("User {UserId} was not found", id);
+            return null;
+        }
+
+        _logger.LogInformation("User {UserId} found", id);
+
+        return user;
     }
 
     public async Task<User> CreateAsync(CreateUserRequest request)
@@ -30,6 +42,8 @@ public class UserService : IUserService
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} created", user.Id);
 
         return user;
     }
@@ -48,6 +62,8 @@ public class UserService : IUserService
 
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("User {UserId} updated", id);
+
         return user;
     }
 
@@ -62,6 +78,8 @@ public class UserService : IUserService
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} deleted", id);
 
         return true;
     }
