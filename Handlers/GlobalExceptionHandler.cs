@@ -16,7 +16,26 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is BadHttpRequestException)
+        if (exception is ConflictException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+
+            _logger.LogWarning(
+                exception,
+                "Conflict occurred: {Method} {Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path
+            );
+
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                status = 409,
+                message = exception.Message
+            }, cancellationToken);
+
+            return true;   
+        }
+        else if (exception is BadHttpRequestException)
         {
             httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
 
@@ -30,7 +49,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             await httpContext.Response.WriteAsJsonAsync(new
             {
                 status = 400,
-                message = "Invalid request"
+                message = exception.Message
             }, cancellationToken);
 
             return true;            

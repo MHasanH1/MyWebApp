@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MyWebApp.Data;
 using MyWebApp.DTOs;
@@ -20,6 +21,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var app = builder.Build();
 
@@ -29,7 +31,7 @@ app.MapGet("/", () => "Hello!");
 
 app.MapGet("/users", async (IUserService userService) =>
 {
-  List<User> users = await userService.GetAllAsync();
+  List<UserResponse> users = await userService.GetAllAsync();
 
   return Results.Ok(new
   {
@@ -39,7 +41,7 @@ app.MapGet("/users", async (IUserService userService) =>
 });
 
 app.MapGet("/users/{id}", async (int id, IUserService userService) => {
-  User? user = await userService.GetByIdAsync(id);
+  UserResponse? user = await userService.GetByIdAsync(id);
 
   if (user == null)
   {
@@ -56,6 +58,23 @@ app.MapGet("/users/{id}", async (int id, IUserService userService) => {
   });
 });
 
+app.MapPost("/auth/register", async (RegisterUserRequest request, IUserService userService) =>
+{
+  UserResponse user = await userService.RegisterAsync(request);
+
+  return Results.Created($"/users/${user.Id}", new {
+    message = "User registered",
+    data = new
+    {
+      user.Id,
+      user.Name,
+      user.Age,
+      user.Email
+    } 
+  });
+})
+.AddEndpointFilter<ValidationFilter<RegisterUserRequest>>();
+
 app.MapPost("/users", async (CreateUserRequest request, IUserService userService) =>
 {
   User createdUser = await userService.CreateAsync(request);
@@ -70,7 +89,7 @@ app.MapPost("/users", async (CreateUserRequest request, IUserService userService
 
 app.MapPut("/users/{id}", async (int id, UpdateUserRequest request, IUserService userService) =>
 {
-  User? updatedUser = await userService.UpdateAsync(id, request);
+  UserResponse? updatedUser = await userService.UpdateAsync(id, request);
 
   if (updatedUser == null) return Results.NotFound(new
   {

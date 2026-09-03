@@ -12,8 +12,13 @@ public class CreateUserRequestValidator
             .NotEmpty()
             .MinimumLength(2)
             .MaximumLength(50);
+        
+        RuleFor(x => x.Email)
+          .NotEmpty()
+          .EmailAddress()
+          .MaximumLength(255);
 
         RuleFor(x => x.Age)
-            .InclusiveBetween(1, 120);
+            .InclusiveBetween(4, 120);
     }
 }

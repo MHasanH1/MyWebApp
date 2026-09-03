@@ -5,13 +5,11 @@ namespace MyWebApp.Services;
 
 public interface IUserService
 {
-    Task<List<User>> GetAllAsync();
-
-    Task<User?> GetByIdAsync(int id);
-
+    Task<List<UserResponse>> GetAllAsync();
+    Task<bool> EmailExistAsync(string email);
+    Task<UserResponse?> GetByIdAsync(int id);
+    Task<UserResponse> RegisterAsync(RegisterUserRequest request);
     Task<User> CreateAsync(CreateUserRequest request);
-
-    Task<User?> UpdateAsync(int id, UpdateUserRequest request);
-
+    Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request);
     Task<bool> DeleteAsync(int id);
 }
