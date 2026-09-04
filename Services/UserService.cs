@@ -92,6 +92,31 @@ public class UserService : IUserService
         return userResponse;
     }
 
+    public async Task<User?> LoginAsync(LoginRequest request)
+    {
+        User? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        PasswordVerificationResult result = 
+            _passwordHasher.VerifyHashedPassword(user,
+                user.PasswordHash,
+                request.Password
+            );
+
+        if (result == PasswordVerificationResult.Failed)
+        {
+            return null;
+        }
+
+        _logger.LogInformation("User {UserId} logged in", user.Id);
+
+        return user;
+    }
+
     public async Task<User> CreateAsync(CreateUserRequest request)
     {
         User user = new User { Name = request.Name, Age = request.Age, Email = request.Email };
